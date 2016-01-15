@@ -1,0 +1,14 @@
+*.pyc
+*.swp
+*~
+rfcli_output
+virtualenv
+.project
+.pydevproject
+.idea
+.idea/workspace.xml
+run_tests_mak.sh
+targets/HPDL40.ini
+*.nfs*
+.reviewboardrc
+.coverage
