@@ -14,43 +14,24 @@ from HelperClasses import *
 
 class Chess(object):
 
+    def __init__(self):
+        """Runs the program. """
+        Chess.run()
+
     @staticmethod
-    def main():
-        """Main program"""
+    def run():
+        """Runs the program's main loop (which entails printing the main menu, creating a chess game,
+        playing and ending it. """
 
-        print "\nWelcome to Kex Chess! Please select an option:\n"
-        print "(1) Create new game"
-        print "(2) Exit\n"
-
-        print "Select: "
+        Chess.print_main_menu()
         selected_option = raw_input()
 
-        if selected_option == '1':
-            print "Player 1 name: "
-            player1_name = raw_input()
-            print "Player 2 name: "
-            player2_name = raw_input()
-            print player1_name + ", select white (w) or black (b) pieces: ",
-            player1_color = raw_input()
-            player2_color = ""
-            (white_player, black_player) = (None, None)
+        if selected_option == '1':    # new game creation
 
-            if player1_color is 'w':
-                (player1_color, player2_color) = WHITE, BLACK
-            elif player1_color is 'b':
-                (player1_color, player2_color) = BLACK, WHITE
-
-            player1 = Player(player1_name, player1_color)
-            player2 = Player(player2_name, player2_color)
-
-            if player1_color == WHITE:
-                (white_player, black_player) = player1, player2
-            elif player1_color == BLACK:
-                (white_player, black_player) = player2, player1
-
+            (player1, player2) = Chess.setup_players()
+            (white_player, black_player) = Chess.get_players_from_color(player1, player2)
             chess_game = Game(player1, player2)
             gameboard = chess_game.board
-
             players = [white_player, black_player]
             player_in_turn = white_player
 
@@ -62,8 +43,7 @@ class Chess(object):
                 if src_square == 'S':
                     break
 
-                (new_move, dst_square) = Chess.get_dst_square_from_player(
-                                            player_in_turn, gameboard)
+                (new_move, dst_square) = Chess.get_dst_square_from_player(player_in_turn, gameboard)
                 print "src_square: ", src_square
                 print "dst_square: ", dst_square
 
@@ -77,17 +57,7 @@ class Chess(object):
                 if move_is_valid:
                     player_in_turn.finalize_move(src_square, dst_square, gameboard)
                     gameboard.update_lists(white_player, black_player)
-
-                    check = gameboard.check_exists(player_in_turn, player_in_turn.available_pieces_positions)
-                    if check is True:
-                        print "Check!"
-                        gameboard.move_history[-1]["check"] = True
-                        checkmate = gameboard.checkmate_exists(
-                            player_in_turn, player_in_turn.available_pieces_positions)
-                        if checkmate is True:
-                            gameboard.move_history[-1]["checkmate"] = True
-                            print "Checkmate!!"
-
+                    (check, checkmate) = Chess.check_for_check_and_checkmate(gameboard, player_in_turn)
                     gameboard.print_move_history()
                 else:
                     print "Invalid move. Please choose again.\n"
@@ -96,7 +66,60 @@ class Chess(object):
                 player_in_turn.print_board(gameboard)
                 player_in_turn = Chess.change_turn(player_in_turn, players)
 
-                # wait = input("Press enter to continue...")
+        elif selected_option == '2':    # exit program
+            pass
+
+    @staticmethod
+    def print_main_menu():
+        """ Prints the game's main menu to the console. """
+        print "\nWelcome to Kex Chess! Please select an option:\n"
+        print "(1) Create new game"
+        print "(2) Exit\n"
+        print "Select: "
+
+    @staticmethod
+    def setup_players():
+        """ Asks the user for the players' names and colors and sets them up. Returns the two players. """
+        print "Player 1 name: "
+        player1_name = raw_input()
+        print "Player 2 name: "
+        player2_name = raw_input()
+        print player1_name + ", select white (w) or black (b) pieces: ",
+        player1_color = raw_input()
+        player2_color = ""
+
+        if player1_color is 'w':
+            (player1_color, player2_color) = WHITE, BLACK
+        elif player1_color is 'b':
+            (player1_color, player2_color) = BLACK, WHITE
+
+        player1 = Player(player1_name, player1_color)
+        player2 = Player(player2_name, player2_color)
+        return (player1, player2)
+
+    @staticmethod
+    def get_players_from_color(player1, player2):
+        """ Given the two players, returns the 'white' and 'black' player according to the color chosen. """
+        (white_player, black_player) = (None, None)
+        if player1.color == WHITE:
+            (white_player, black_player) = player1, player2
+        elif player1.color == BLACK:
+            (white_player, black_player) = player2, player1
+        return (white_player, black_player)
+
+    @staticmethod
+    def check_for_check_and_checkmate(gameboard, player):
+        """ Checks for check and checkmate and proceeds to the appropriate actions accordingly. """
+        check = gameboard.check_exists(player, player.available_pieces_positions)
+        checkmate = False
+        if check is True:
+            print "Check!"
+            gameboard.move_history[-1]["check"] = True
+            checkmate = gameboard.checkmate_exists(player, player.available_pieces_positions)
+            if checkmate is True:
+                gameboard.move_history[-1]["checkmate"] = True
+                print "Checkmate!!"
+        return (check, checkmate)
 
     @staticmethod
     def get_src_square_from_player(current_player, gameboard):
@@ -112,7 +135,6 @@ class Chess(object):
             print "\nChoose a square (e.g. A2) to move a piece from: "
             selected_square_code = raw_input().upper()
             if selected_square_code == 'S':
-                # print "HERE2"
                 return selected_square_code
             print "You chose square %s to move a piece from." % selected_square_code,
             selection_is_valid = current_player.src_square_selection_is_valid(selected_square_code)
@@ -133,7 +155,6 @@ class Chess(object):
             print "Choose a square (e.g. A4) to move a piece to (or press 'N' to choose a new piece to move): "
             given_square_code = raw_input().upper()
             if given_square_code == 'S':
-                # print "HERE1"
                 return (False, given_square_code)
             if given_square_code != "N":
                 print "You chose square %s to move a piece to." % given_square_code,
@@ -179,6 +200,10 @@ class Chess(object):
         else:
             return True
 
+    @staticmethod
+    def main():
+        """ Main program. """
+        Chess()
 
 if __name__ == "__main__":
     Chess.main()
