@@ -61,13 +61,63 @@ class Player(object):
             gameboard.en_passant_square = None
             dst_square.en_passant = True
 
+        # castling case
+        castling_square = self.finalize_castling(dst_square, gameboard)
+
         board[dst_square.row][dst_square.col].is_occupied = True
         board[dst_square.row][dst_square.col].occupying_piece = src_piece
 
-        # pawn promotion
+        # pawn promotion case
         self.promote_pawn(dst_square, gameboard)
 
-        self.update_move_history(src_square, dst_square, gameboard, capture_dict)
+        # mark king or rook as moved (used for castling)
+        if (src_piece.code[1] == 'r') or (src_piece.code[1] == 'k'):
+            src_piece.has_moved = True
+
+        self.update_move_history(src_square, dst_square, gameboard, capture_dict, castling_square)
+
+    def finalize_castling(self, dst_square, gameboard):
+        """ Move king and rook according to the type of castling selected (short or long). """
+        board = gameboard.board
+        castling_square = None
+
+        if dst_square == gameboard.castling_square:
+            if self.color == WHITE:
+                # castle short
+                if dst_square.code == 'G1':
+                    (e1, f1, g1, h1) = (board[7][4], board[7][5], board[7][6], board[7][7])
+                    (g1.is_occupied, g1.occupying_piece) = (True, e1.occupying_piece)
+                    (f1.is_occupied, f1.occupying_piece) = (True, h1.occupying_piece)
+                    (e1.is_occupied, e1.occupying_piece) = (False, None)
+                    (h1.is_occupied, h1.occupying_piece) = (False, None)
+                # castle long
+                elif dst_square.code == 'C1':
+                    (a1, b1, c1, d1, e1) = (board[7][0], board[7][1], board[7][2], board[7][3], board[7][4])
+                    (c1.is_occupied, c1.occupying_piece) = (True, e1.occupying_piece)
+                    (d1.is_occupied, d1.occupying_piece) = (True, a1.occupying_piece)
+                    (a1.is_occupied, a1.occupying_piece) = (False, None)
+                    (b1.is_occupied, b1.occupying_piece) = (False, None)
+                    (e1.is_occupied, e1.occupying_piece) = (False, None)
+            elif self.color == BLACK:
+                # castle short
+                if dst_square.code == 'G8':
+                    (e8, f8, g8, h8) = (board[0][4], board[0][5], board[0][6], board[0][7])
+                    (g8.is_occupied, g8.occupying_piece) = (True, e8.occupying_piece)
+                    (f8.is_occupied, f8.occupying_piece) = (True, h8.occupying_piece)
+                    (e8.is_occupied, e8.occupying_piece) = (False, None)
+                    (h8.is_occupied, h8.occupying_piece) = (False, None)
+                # castle long
+                elif dst_square.code == 'C8':
+                    (a8, b8, c8, d8, e8) = (board[0][0], board[0][1], board[0][2], board[0][3], board[0][4])
+                    (c8.is_occupied, c8.occupying_piece) = (True, e8.occupying_piece)
+                    (d8.is_occupied, d8.occupying_piece) = (True, a8.occupying_piece)
+                    (a8.is_occupied, a8.occupying_piece) = (False, None)
+                    (b8.is_occupied, b8.occupying_piece) = (False, None)
+                    (e8.is_occupied, e8.occupying_piece) = (False, None)
+            castling_square = dst_square
+
+        gameboard.castling_square = None
+        return castling_square
 
     def promote_pawn(self, dst_square, gameboard):
         """ Promotes a pawn to a piece given by the user when asked. """
@@ -89,6 +139,7 @@ class Player(object):
             else:
                 print "Invalid selection. Choose again: "
                 continue
+
         promotion_pieces = {
             '1': Queen(self.color),
             '2': Rook(self.color),
@@ -109,7 +160,7 @@ class Player(object):
                 current_move_sn = gameboard.move_history[-1]["sn"]
         return current_move_sn
 
-    def update_move_history(self, src_square, dst_square, gameboard, capture_dict):
+    def update_move_history(self, src_square, dst_square, gameboard, capture_dict, castling_square):
         """ Updates move history with current move. """
 
         current_move_sn = self.get_move_sn(gameboard)
@@ -121,6 +172,7 @@ class Player(object):
             "dst_square": dst_square,
             "en_passant": dst_square.en_passant,
             "capture": capture_dict,
+            "castling_square": castling_square,
             "check": False,
             "checkmate": False
         })

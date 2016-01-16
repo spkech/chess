@@ -98,6 +98,7 @@ class Rook(Piece):
     def __init__(self, color):
         super(Rook, self).__init__(color)
         self.code = self.get_code(self)
+        self.has_moved = False
 
 
 class Queen(Piece):
@@ -112,3 +113,4 @@ class King(Piece):
     def __init__(self, color):
         super(King, self).__init__(color)
         self.code = self.get_code(self)
+        self.has_moved = False

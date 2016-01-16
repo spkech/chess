@@ -102,11 +102,11 @@ class MoveValidator(object):
             new_gameboard = copy.deepcopy(gameboard)   # deep (recursive) copy
 
             # update squares attributes
-            new_gameboard.board[src_square.row][src_square.col].is_occupied = False
-            new_gameboard.board[src_square.row][src_square.col].occupying_piece = None
             new_gameboard.board[dst_square.row][dst_square.col].is_occupied = True
             new_gameboard.board[dst_square.row][dst_square.col].occupying_piece = \
                 gameboard.board[src_square.row][src_square.col].occupying_piece
+            new_gameboard.board[src_square.row][src_square.col].is_occupied = False
+            new_gameboard.board[src_square.row][src_square.col].occupying_piece = None
 
             # print "\n---NEW BOARD---\n"
             # self.player.print_board(new_gameboard)
@@ -476,10 +476,146 @@ class KingMoveValidator(MoveValidator):
             if dst_row >= 0 and dst_row <= 7 and dst_col >= 0 and dst_col <= 7:
                 allowed_squares.append(board[dst_row][dst_col])
 
+        castling_squares = {WHITE: {"short": board[7][6], "long": board[7][2]},
+                            BLACK: {"short": board[0][6], "long": board[0][2]}}
+
+        king_can_castle_short = self.king_can_castle_short(src_square, gameboard)
+        if king_can_castle_short:
+            print "\nKING CAN CASTLE SHORT"
+            gameboard.castling_square = castling_squares[self.color]["short"]
+            allowed_squares.append(gameboard.castling_square)
+
+        king_can_castle_long = self.king_can_castle_long(src_square, gameboard)
+        if king_can_castle_long:
+            print "\nKING CAN CASTLE LONG"
+            gameboard.castling_square = castling_squares[self.color]["long"]
+            allowed_squares.append(gameboard.castling_square)
+
         allowed_squares = self.filter_out_of_bounds_dst_squares(allowed_squares)
         allowed_squares = self.filter_squares_occupied_by_same_color_pieces(allowed_squares)
 
         allowed_square_codes = [square.code for square in allowed_squares]
-        # print "allowed_square_codes for src_square %s: %s" % (src_square.code, allowed_square_codes)
+        print "allowed_square_codes for src_square %s: %s" % (src_square.code, allowed_square_codes)
 
         return allowed_square_codes
+
+    def king_can_castle_short(self, src_square, gameboard):
+        """ Returns true if king can castle. The king can castle short or long depending on the dst_square.
+            Castling is only permissible if all of the following conditions hold:
+            1. The king and the chosen rook are on the player's first rank.
+            2. Neither the king nor the chosen rook has previously moved.
+            3. There are no pieces between the king and the chosen rook.
+            4. The king is not currently in check.
+            5. The king does not pass through a square that is attacked by an enemy piece.
+            6. The king does not end up in check. (True of any legal move.)"""
+        king_can_castle_short = False
+        (rook_square, knight_square, bishop_square, in_between_squares) = (None, None, None, None)
+
+        if self.color is WHITE:
+            rook_square = gameboard.board[7][7]
+            knight_square = gameboard.board[7][6]
+            bishop_square = gameboard.board[7][5]
+            # in_between_squares = [bishop_square, knight_square]
+        elif self.color is BLACK:
+            rook_square = gameboard.board[0][7]
+            knight_square = gameboard.board[0][6]
+            bishop_square = gameboard.board[0][5]
+            # in_between_squares = [bishop_square, knight_square]
+        in_between_squares = [bishop_square, knight_square]
+
+        king_can_castle_short = \
+            self.king_and_rook_are_on_players_first_rank(src_square, rook_square) and\
+            self.king_and_rook_have_not_previously_moved(src_square, rook_square) and\
+            self.king_and_rook_are_connected(in_between_squares) and\
+            self.king_is_not_currently_in_check(gameboard) and\
+            not self.king_passes_through_attacked_square_or_ends_up_in_check(in_between_squares, gameboard)
+
+        return king_can_castle_short
+
+    def king_can_castle_long(self, src_square, gameboard):
+        """ Returns true if king can castle. The king can castle short or long depending on the dst_square.
+            Castling is only permissible if all of the following conditions hold:
+            1. The king and the chosen rook are on the player's first rank.
+            2. Neither the king nor the chosen rook has previously moved.
+            3. There are no pieces between the king and the chosen rook.
+            4. The king is not currently in check.
+            5. The king does not pass through a square that is attacked by an enemy piece.
+            6. The king does not end up in check. (True of any legal move.)"""
+        king_can_castle_long = False
+        (rook_square, knight_square, bishop_square, queen_square, in_between_squares) = (None, None, None, None, None)
+
+        if self.color is WHITE:
+            rook_square = gameboard.board[7][0]
+            knight_square = gameboard.board[7][1]
+            bishop_square = gameboard.board[7][2]
+            queen_square = gameboard.board[7][3]
+            # e1 = gameboard.board[7][4]
+            # in_between_squares = [knight_square, bishop_square, queen_square]
+        elif self.color is BLACK:
+            rook_square = gameboard.board[0][0]
+            knight_square = gameboard.board[0][1]
+            bishop_square = gameboard.board[0][2]
+            queen_square = gameboard.board[0][3]
+            # e1 = gameboard.board[7][4]
+        in_between_squares = [knight_square, bishop_square, queen_square]
+
+        king_can_castle_long = \
+            self.king_and_rook_are_on_players_first_rank(src_square, rook_square) and\
+            self.king_and_rook_have_not_previously_moved(src_square, rook_square) and\
+            self.king_and_rook_are_connected(in_between_squares) and\
+            self.king_is_not_currently_in_check(gameboard) and\
+            not self.king_passes_through_attacked_square_or_ends_up_in_check(in_between_squares, gameboard)
+
+        return king_can_castle_long
+
+    def king_and_rook_are_on_players_first_rank(self, king_square, rook_square):
+        # Prerequisite #1
+        king_and_rook_are_on_players_first_rank = True
+        if self.color is WHITE:
+            king_and_rook_are_on_players_first_rank = (king_square.row == 7) and (rook_square.row == 7)
+        elif self.color is BLACK:
+            king_and_rook_are_on_players_first_rank = (king_square.row == 0) and (rook_square.row == 0)
+        return king_and_rook_are_on_players_first_rank
+
+    def king_and_rook_have_not_previously_moved(self, king_square, rook_square):
+        # Prerequisite #2
+        king_and_rook_have_not_previously_moved = True
+        if (king_square.is_occupied and king_square.occupying_piece.code[1] == 'k') and\
+           (rook_square.is_occupied and king_square.occupying_piece.code[1] == 'r'):
+
+            (king, rook) = (king_square.occupying_piece, rook_square.occupying_piece)
+            if king.has_moved or rook.has_moved:
+                king_and_rook_have_not_previously_moved = False
+        return king_and_rook_have_not_previously_moved
+
+    def king_and_rook_are_connected(self, in_between_squares):
+        # Prerequisite #3
+        king_and_rook_are_connected = True
+        for square in in_between_squares:
+            if square.is_occupied:
+                king_and_rook_are_connected = False
+                break
+        return king_and_rook_are_connected
+
+    def king_is_not_currently_in_check(self, gameboard):
+        # Prerequisite #4
+        opponent = gameboard.get_opponent(self.player)
+        check = gameboard.check_exists(opponent, opponent.available_pieces_positions)
+        king_is_not_currently_in_check = (not check)
+        return king_is_not_currently_in_check
+
+    def king_passes_through_attacked_square_or_ends_up_in_check(self, in_between_squares, gameboard):
+        # Prerequisites #5, #6
+        opponent = gameboard.get_opponent(self.player)
+
+        for src_square in opponent.available_pieces_positions:
+            pieceValidator = MoveValidator.get_instance(opponent, src_square.occupying_piece)
+            opponent_dst_squares_codes = pieceValidator.get_valid_dst_squares(src_square, gameboard)
+            opponent_dst_squares = [SquareConverter.get_square_object_from_code(
+                square_code, gameboard.board) for square_code in opponent_dst_squares_codes]
+
+            for square in in_between_squares:
+                if square in opponent_dst_squares:
+                    return True
+
+        return False

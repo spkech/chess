@@ -30,6 +30,7 @@ class Board(object):
         self.players = players
         self.move_history = []
         self.en_passant_square = None    # the destination square in an 'en passant' move
+        self.castling_square = None      # the destination square in a castling move
         self.check = False
         self.checkmate = False
         self._setup()
@@ -103,7 +104,7 @@ class Board(object):
 
         # print "\n\nIN CHECK EXISTS:"
 
-        avl_src_pieces_squares_codes = [square.code for square in avl_src_pieces_squares]
+        # avl_src_pieces_squares_codes = [square.code for square in avl_src_pieces_squares]
         # print "avl_src_pieces_squares in CHECK: ", avl_src_pieces_squares_codes
 
         for src_square in avl_src_pieces_squares:
@@ -160,6 +161,7 @@ class Board(object):
                 symbol = '-'
                 capture_str = ''
                 check_str = ''
+                castling_str = ''
 
                 if move["player"].color == WHITE:
                     sn_str = str(move['sn'])
@@ -176,19 +178,26 @@ class Board(object):
                     symbol = 'x'
                     capturing_piece = move['capture']['capturing_piece']
                     captured_piece = move['capture']['captured_piece']
-                    capture_str = " " + str(capturing_piece) + " takes " + str(captured_piece)
+                    capture_str = str(capturing_piece) + " takes " + str(captured_piece)
 
                 if move["check"] is True:
                     check_str = "[ Check! ]"
                 if move["checkmate"] is True:
                     check_str = "[ Checkmate!! ]"
 
+                if move["castling_square"] is not None:
+                    if move["castling_square"].code[0] == 'G':
+                        castling_str = "castles short"
+                    elif move["castling_square"].code[0] == 'C':
+                        castling_str = "castles long"
+
                 color_str = move['player'].get_color_str().title()
                 name = move['player'].name
                 src = move['src_square'].code
                 dst = move['dst_square'].code
-                print " %s\t %s (%s):\t%s%s%s\t%s%s%s" \
-                    % (sn_str, color_str, name, src, symbol, dst, capture_str, en_passant_str, check_str)
+                print " %s\t %s (%s):\t%s%s%s\t%s%s%s%s" \
+                    % (sn_str, color_str, name, src, symbol, dst, capture_str, en_passant_str, check_str, castling_str)
+
             print "========================================================================"
 
     def update_lists(self, white_player, black_player):

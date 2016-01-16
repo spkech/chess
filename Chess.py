@@ -54,11 +54,21 @@ class Chess(object):
             players = [white_player, black_player]
             player_in_turn = white_player
 
+            print "Game started! Press 'S' at any time to stop the game and return to the main menu."
+
             while True:
-                # player_in_turn.print_board(gameboard)
+
                 src_square = Chess.get_src_square_from_player(player_in_turn, gameboard)
+                if src_square == 'S':
+                    break
+
                 (new_move, dst_square) = Chess.get_dst_square_from_player(
                                             player_in_turn, gameboard)
+                print "src_square: ", src_square
+                print "dst_square: ", dst_square
+
+                if dst_square == 'S':
+                    break
 
                 if new_move is True:     # choose a source square again
                     continue
@@ -101,6 +111,9 @@ class Chess(object):
         while True:
             print "\nChoose a square (e.g. A2) to move a piece from: "
             selected_square_code = raw_input().upper()
+            if selected_square_code == 'S':
+                # print "HERE2"
+                return selected_square_code
             print "You chose square %s to move a piece from." % selected_square_code,
             selection_is_valid = current_player.src_square_selection_is_valid(selected_square_code)
             if selection_is_valid is True:
@@ -119,6 +132,9 @@ class Chess(object):
             print "\n"
             print "Choose a square (e.g. A4) to move a piece to (or press 'N' to choose a new piece to move): "
             given_square_code = raw_input().upper()
+            if given_square_code == 'S':
+                # print "HERE1"
+                return (False, given_square_code)
             if given_square_code != "N":
                 print "You chose square %s to move a piece to." % given_square_code,
 
