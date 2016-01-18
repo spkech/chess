@@ -147,7 +147,7 @@ class TestChess(unittest.TestCase):
             'a6', 'b5',
             'd2', 'd3',
             'a5', 'a4',
-            'c7', 'c8', '1',
+            'c7', 'b8', '1',
             'S'
             ])
         Chess.main()
@@ -246,6 +246,64 @@ class TestChess(unittest.TestCase):
             'a7', 'a6',
             'h7', 'h6',
             'e8', 'g8',
+            'S'
+            ])
+        Chess.main()
+
+    def test_stalemate(self):
+        pw.patch_module(self, '__builtin__.raw_input', side_effect=[
+            '1', 'Spy', 'Theo', 'w',
+            'a2', 'a4',    # white knight move
+            'a7', 'a5',    # black pawn move
+            'b2', 'b4',
+            'b7', 'b5',
+            'c2', 'c4',
+            'c7', 'c5',
+            'd2', 'd4',
+            'd7', 'd5',
+            'e2', 'e4',
+            'e7', 'e5',
+            'f2', 'f4',
+            'g8', 'f6',
+            'g2', 'g3',
+            'g7', 'g5',
+            'h2', 'h4',
+            'h7', 'h5',
+            'd1', 'h5',
+            'a8', 'a6',
+            'h5', 'h8',
+            'a6', 'a8',
+            'h8', 'g8',
+            'a8', 'a6',
+            'g8', 'f8',
+            'e8', 'd7',
+            'f8', 'c5',
+            'a6', 'a7',
+            'c5', 'c8',
+            'd7', 'e8',
+            'c8', 'b8',
+            'g5', 'g4',
+            'b8', 'a8',
+            'b5', 'a4',
+            'a1', 'a4',
+            'a5', 'b4',
+            'a4', 'b4',
+            'e8', 'f8',
+            'f4', 'e5',
+            'f8', 'g7',
+            'a8', 'd8',
+            'f6', 'e4',
+            'f1', 'd3',
+            'g7', 'h7',
+            'c4', 'd5',
+            'h7', 'g7',
+            'd3', 'e4',
+            'f7', 'f6',
+            'e5', 'f6',
+            'g7', 'f7',
+            'h1', 'h2',
+            'a7', 'a4',
+            'b4', 'a4',       # should be stalemate
             'S'
             ])
         Chess.main()

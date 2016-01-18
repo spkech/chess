@@ -33,6 +33,7 @@ class Board(object):
         self.castling_square = None      # the destination square in a castling move
         self.check = False
         self.checkmate = False
+        self.stalemate = False
         self._setup()
 
     def get_opponent(self, player):
@@ -80,8 +81,11 @@ class Board(object):
                 # print "\nNEW BOARD:"
                 # opponent.print_board(new_gameboard)
 
-                avl_pieces = player.available_pieces_positions
+                # print "player.available_pieces_positions: ", player.get_square_codes_of_available_pieces()
+                avl_pieces = copy.copy(player.available_pieces_positions)
+                # avl_pieces = player.available_pieces_positions
                 if opponent_dst_square in player.available_pieces_positions:
+                    # pass
                     # print "IT IS!, dst square: ", opponent_dst_square.code
                     avl_pieces.remove(opponent_dst_square)  # remove piece in case of capture
 
@@ -104,7 +108,7 @@ class Board(object):
 
         # print "\n\nIN CHECK EXISTS:"
 
-        # avl_src_pieces_squares_codes = [square.code for square in avl_src_pieces_squares]
+        avl_src_pieces_squares_codes = [square.code for square in avl_src_pieces_squares]
         # print "avl_src_pieces_squares in CHECK: ", avl_src_pieces_squares_codes
 
         for src_square in avl_src_pieces_squares:
@@ -120,7 +124,7 @@ class Board(object):
 
                 if dst_square.is_occupied and dst_square.occupying_piece.code[1] == 'k':   # king
                     self.check = True
-                    print "Check!"
+                    # print "Check!"
                     return True
         return False
 
@@ -181,9 +185,11 @@ class Board(object):
                     capture_str = str(capturing_piece) + " takes " + str(captured_piece)
 
                 if move["check"] is True:
-                    check_str = "[ Check! ]"
+                    check_str = "\t[ Check! ]"
                 if move["checkmate"] is True:
-                    check_str = "[ Checkmate!! ]"
+                    check_str = "\t[ Checkmate!! ]"
+                if move["stalemate"] is True:
+                    check_str = "\t[ Stalemate!! ]"
 
                 if move["castling_square"] is not None:
                     if move["castling_square"].code[0] == 'G':

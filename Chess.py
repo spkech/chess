@@ -44,8 +44,6 @@ class Chess(object):
                     break
 
                 (new_move, dst_square) = Chess.get_dst_square_from_player(player_in_turn, gameboard)
-                print "src_square: ", src_square
-                print "dst_square: ", dst_square
 
                 if dst_square == 'S':
                     break
@@ -57,7 +55,8 @@ class Chess(object):
                 if move_is_valid:
                     player_in_turn.finalize_move(src_square, dst_square, gameboard)
                     gameboard.update_lists(white_player, black_player)
-                    (check, checkmate) = Chess.check_for_check_and_checkmate(gameboard, player_in_turn)
+                    (check, checkmate, stalemate) = Chess.check_for_check_checkmate_stalemate(
+                        gameboard, player_in_turn)
                     gameboard.print_move_history()
                 else:
                     print "Invalid move. Please choose again.\n"
@@ -108,10 +107,12 @@ class Chess(object):
         return (white_player, black_player)
 
     @staticmethod
-    def check_for_check_and_checkmate(gameboard, player):
+    def check_for_check_checkmate_stalemate(gameboard, player):
         """ Checks for check and checkmate and proceeds to the appropriate actions accordingly. """
         check = gameboard.check_exists(player, player.available_pieces_positions)
         checkmate = False
+        stalemate = False
+
         if check is True:
             print "Check!"
             gameboard.move_history[-1]["check"] = True
@@ -119,7 +120,15 @@ class Chess(object):
             if checkmate is True:
                 gameboard.move_history[-1]["checkmate"] = True
                 print "Checkmate!!"
-        return (check, checkmate)
+
+        else:
+            checkmate = gameboard.checkmate_exists(player, player.available_pieces_positions)
+            if checkmate is True:
+                gameboard.move_history[-1]["stalemate"] = True
+                stalemate = True
+                print "Stalemate!!"
+
+        return (check, checkmate, stalemate)
 
     @staticmethod
     def get_src_square_from_player(current_player, gameboard):
@@ -128,6 +137,8 @@ class Chess(object):
         print "%s (%s) to play." % (current_player.get_color_str().title(), current_player.name),
         print "\nAvailable %s pieces to move lie in squares: %s"\
             % (current_player.get_color_str(), current_player.get_square_codes_of_available_pieces())
+        # print "\nAvailable %s pieces to move lie in squares: %s"\
+        #     % (gameboard.get_opponent(current_player).get_color_str(),gameboard.get_opponent(current_player).get_square_codes_of_available_pieces())
 
         current_player.print_board(gameboard)
 

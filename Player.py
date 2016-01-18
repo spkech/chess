@@ -174,7 +174,8 @@ class Player(object):
             "capture": capture_dict,
             "castling_square": castling_square,
             "check": False,
-            "checkmate": False
+            "checkmate": False,
+            "stalemate": False
         })
 
     def src_square_selection_is_valid(self, selected_square_code):
