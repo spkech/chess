@@ -109,20 +109,21 @@ class Chess(object):
     @staticmethod
     def check_for_check_checkmate_stalemate(gameboard, player):
         """ Checks for check and checkmate and proceeds to the appropriate actions accordingly. """
-        check = gameboard.check_exists(player, player.available_pieces_positions)
+        check = gameboard.check_exists(player, gameboard.avl_pieces_positions[player.color])
+
         checkmate = False
         stalemate = False
 
         if check is True:
             print "Check!"
             gameboard.move_history[-1]["check"] = True
-            checkmate = gameboard.checkmate_exists(player, player.available_pieces_positions)
+            checkmate = gameboard.checkmate_exists(player, gameboard.avl_pieces_positions[player.color])
             if checkmate is True:
                 gameboard.move_history[-1]["checkmate"] = True
                 print "Checkmate!!"
 
         else:
-            checkmate = gameboard.checkmate_exists(player, player.available_pieces_positions)
+            checkmate = gameboard.checkmate_exists(player, gameboard.avl_pieces_positions[player.color])
             if checkmate is True:
                 gameboard.move_history[-1]["stalemate"] = True
                 stalemate = True
@@ -136,9 +137,7 @@ class Chess(object):
         print "===================================================================="
         print "%s (%s) to play." % (current_player.get_color_str().title(), current_player.name),
         print "\nAvailable %s pieces to move lie in squares: %s"\
-            % (current_player.get_color_str(), current_player.get_square_codes_of_available_pieces())
-        # print "\nAvailable %s pieces to move lie in squares: %s"\
-        #     % (gameboard.get_opponent(current_player).get_color_str(),gameboard.get_opponent(current_player).get_square_codes_of_available_pieces())
+            % (current_player.get_color_str(), current_player.get_square_codes_of_available_pieces(gameboard))
 
         current_player.print_board(gameboard)
 
@@ -148,7 +147,7 @@ class Chess(object):
             if selected_square_code == 'S':
                 return selected_square_code
             print "You chose square %s to move a piece from." % selected_square_code,
-            selection_is_valid = current_player.src_square_selection_is_valid(selected_square_code)
+            selection_is_valid = current_player.src_square_selection_is_valid(selected_square_code, gameboard)
             if selection_is_valid is True:
                 from_square = SquareConverter.get_square_object_from_code(selected_square_code, gameboard.board)
                 return from_square

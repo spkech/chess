@@ -92,10 +92,8 @@ class MoveValidator(object):
     def king_is_safe_after_move(self, src_square, dst_square, gameboard):
         """ Returns True if the king is safe after the piece in the src_square moves to dst_square. """
         king_is_safe = True
-        # if gameboard.check:
-        # print "I AM BEING CHECKED!"
+        # print "IN   KING_IS_SAFE_AFTER_MOVE (MoveValidator)!"
         opponent = gameboard.get_opponent(self.player)
-        # print "opponent.available_pieces_positions: ", opponent.get_square_codes_of_available_pieces()
         new_gameboard = copy.deepcopy(gameboard)
 
         # update squares attributes
@@ -105,13 +103,14 @@ class MoveValidator(object):
         new_gameboard.board[src_square.row][src_square.col].is_occupied = False
         new_gameboard.board[src_square.row][src_square.col].occupying_piece = None
 
-        # print "\n---NEW BOARD---\n"
-        # self.player.print_board(new_gameboard)
 
-        # print "dst_square.code: ", dst_square.code
-        # print "src_square.code: ", src_square.code
+        if self.player.color is WHITE:
+            new_gameboard.update_lists(self.player, opponent)
+        else:
+            new_gameboard.update_lists(opponent, self.player)
 
-        check = new_gameboard.check_exists(opponent, opponent.available_pieces_positions)
+        check = new_gameboard.check_exists(opponent, new_gameboard.avl_pieces_positions[opponent.color])
+
         print "\ncheck NOW is: ", check
         if check is True:
             print "Your king is being checked!"
@@ -193,7 +192,7 @@ class PawnMoveValidator(MoveValidator):
                 can_capture = True
         return can_capture
 
-    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None):
+    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None, castling=False):
         """ Returns a list of the squares that the pawn in the src_square can move to. """
 
         board = gameboard.board
@@ -203,7 +202,7 @@ class PawnMoveValidator(MoveValidator):
         allowed_squares = []
 
         if src_piece_color == WHITE:
-            (front_left_square, front_right_square, front_square) = (None, None, None)
+            (front_left_square, front_right_square, front_square, front_leap_square) = (None, None, None, None)
             front_left_square_is_in_bounds = (row-1 >= 0) and (col-1 >= 0)
             front_right_square_is_in_bounds = (row-1 >= 0) and (col+1 <= 7)
             front_square_is_in_bounds = (row-1 >= 0)
@@ -213,6 +212,8 @@ class PawnMoveValidator(MoveValidator):
                 front_right_square = board[row-1][col+1]
             if front_square_is_in_bounds:
                 front_square = board[row-1][col]
+            if src_square.row == 6:
+                front_leap_square = board[row-2][col]
             # examine front left and right squares for possible opponent pieces
             if not front_square.is_occupied:
                 allowed_squares.append(front_square)
@@ -223,11 +224,12 @@ class PawnMoveValidator(MoveValidator):
             if front_right_square and front_right_square.is_occupied and \
                     front_right_square.occupying_piece.color is not src_piece_color:
                 allowed_squares.append(front_right_square)
-            if src_square.row == 6:                     # for starting pawns, also add square 2 positions forward
+            # for starting pawns, also add square 2 positions forward)
+            if src_square.row == 6 and not front_leap_square.is_occupied:
                 allowed_squares.append(board[row-2][col])
 
         elif src_piece_color == BLACK:
-            (front_left_square, front_right_square, front_square) = (None, None, None)
+            (front_left_square, front_right_square, front_square, front_leap_square) = (None, None, None, None)
             front_left_square_is_in_bounds = (row+1 <= 7) and (col+1 <= 7)
             front_right_square_is_in_bounds = (row+1 <= 7) and (col-1 >= 0)
             front_square_is_in_bounds = (row+1 <= 7)
@@ -237,6 +239,8 @@ class PawnMoveValidator(MoveValidator):
                 front_right_square = board[row+1][col-1]
             if front_square_is_in_bounds:
                 front_square = board[row+1][col]
+            if src_square.row == 1:
+                front_leap_square = board[row+2][col]
 
             if not front_square.is_occupied:
                 allowed_squares.append(front_square)
@@ -247,7 +251,8 @@ class PawnMoveValidator(MoveValidator):
             if front_right_square and front_right_square.is_occupied and \
                     front_right_square.occupying_piece.color is not src_piece_color:
                 allowed_squares.append(front_right_square)
-            if src_square.row == 1:                     # for starting pawns: moving forward 2 squares is allowed
+            # for starting pawns: moving forward 2 squares is allowed
+            if src_square.row == 1 and not front_leap_square.is_occupied:
                 allowed_squares.append(board[row+2][col])
 
         if dst_square and self.can_capture_opponent_pawn_en_passant(src_square, dst_square, gameboard):
@@ -268,7 +273,7 @@ class KnightMoveValidator(MoveValidator):
         """Move validator for a knight of a given color."""
         super(KnightMoveValidator, self).__init__(player, color)
 
-    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None):
+    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None, castling=False):
         """ Returns a list of the squares that the knight in the src_square can move to. """
 
         board = gameboard.board
@@ -320,7 +325,7 @@ class BishopMoveValidator(MoveValidator):
 
         return allowed_squares
 
-    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None):
+    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None, castling=False):
         """ Returns a list of the squares that the bishop in the src_square can move to. """
 
         board = gameboard.board
@@ -367,8 +372,8 @@ class RookMoveValidator(MoveValidator):
 
         return allowed_squares
 
-    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None):
-        """ Returns a list of the squares that the bishop in the src_square can move to. """
+    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None, castling=False):
+        """ Returns a list of the squares that the rook in the src_square can move to. """
 
         board = gameboard.board
         allowed_squares = []
@@ -436,7 +441,7 @@ class QueenMoveValidator(MoveValidator):
 
         return allowed_squares
 
-    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None):
+    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None, castling=False):
         """ Returns a list of the squares that the queen in the src_square can move to. """
 
         board = gameboard.board
@@ -465,7 +470,7 @@ class KingMoveValidator(MoveValidator):
         """Move validator for a king of a given color."""
         super(KingMoveValidator, self).__init__(player, color)
 
-    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None):
+    def get_valid_dst_squares(self, src_square, gameboard, dst_square=None, castling=False):
         """ Returns a list of the squares that the king in the src_square can move to. """
 
         board = gameboard.board
@@ -480,6 +485,10 @@ class KingMoveValidator(MoveValidator):
             (dst_row, dst_col) = (dims[0], dims[1])
             if dst_row >= 0 and dst_row <= 7 and dst_col >= 0 and dst_col <= 7:
                 allowed_squares.append(board[dst_row][dst_col])
+
+        # if castling:
+        # if not ((gameboard.move_history["check"] is True) and (self.color == gameboard.move_history[])):
+        #     pass
 
         allowed_squares = self.add_castling_squares_to_valid_dst_squares(src_square, gameboard, allowed_squares)
         allowed_squares = self.filter_out_of_bounds_dst_squares(allowed_squares)
@@ -552,6 +561,7 @@ class KingMoveValidator(MoveValidator):
             4. The king is not currently in check.
             5. The king does not pass through a square that is attacked by an enemy piece.
             6. The king does not end up in check. (True of any legal move.)"""
+        print "LONG CASTLE"
         king_can_castle_long = False
         (rook_square, knight_square, bishop_square, queen_square, in_between_squares) = (None, None, None, None, None)
 
@@ -581,12 +591,13 @@ class KingMoveValidator(MoveValidator):
         king_and_rook_are_on_players_first_rank = False
         if self.color is WHITE:
             king_and_rook_are_on_players_first_rank = \
-                (king_square.row == 0 and king_square.is_occupied and king_square.occupying_piece.code == "wk") and\
-                (rook_square.row == 0 and rook_square.is_occupied and rook_square.occupying_piece.code == "wr")
+                (king_square.row == 7 and king_square.is_occupied and king_square.occupying_piece.code == "wk") and\
+                (rook_square.row == 7 and rook_square.is_occupied and rook_square.occupying_piece.code == "wr")
         elif self.color is BLACK:
             king_and_rook_are_on_players_first_rank =\
                 (king_square.row == 0 and king_square.is_occupied and king_square.occupying_piece.code == "bk") and\
                 (rook_square.row == 0 and rook_square.is_occupied and rook_square.occupying_piece.code == "br")
+        # print "king_and_rook_are_on_players_first_rank: ", king_and_rook_are_on_players_first_rank
         return king_and_rook_are_on_players_first_rank
 
     def king_and_rook_have_not_previously_moved(self, king_square, rook_square):
@@ -595,6 +606,7 @@ class KingMoveValidator(MoveValidator):
         (king, rook) = (king_square.occupying_piece, rook_square.occupying_piece)
         if king.has_moved or rook.has_moved:
             king_and_rook_have_not_previously_moved = False
+        # print "king_and_rook_have_not_previously_moved: ", king_and_rook_have_not_previously_moved
         return king_and_rook_have_not_previously_moved
 
     def king_and_rook_are_connected(self, in_between_squares):
@@ -604,20 +616,34 @@ class KingMoveValidator(MoveValidator):
             if square.is_occupied:
                 king_and_rook_are_connected = False
                 break
+        # print "king_and_rook_are_connected: ", king_and_rook_are_connected
         return king_and_rook_are_connected
 
     def king_is_not_currently_in_check(self, gameboard):
         # Condition #4
-        opponent = gameboard.get_opponent(self.player)
-        check = gameboard.check_exists(opponent, opponent.available_pieces_positions)
+        # print "\nCURRENTLY IN CHECK?\n"
+        # print "gameboard.move_history: ", gameboard.move_history
+
+        # print "gameboard.move_history[-1]: ", gameboard.move_history[-1]
+        check = gameboard.move_history[-1]["check"]
+
+        # opponent = gameboard.get_opponent(self.player)
+        # check = gameboard.check_exists(opponent, opponent.available_pieces_positions, castling=True)
         king_is_not_currently_in_check = (not check)
+        # print "king_is_not_currently_in_check: ", king_is_not_currently_in_check
         return king_is_not_currently_in_check
 
     def king_passes_through_attacked_square_or_ends_up_in_check(self, in_between_squares, gameboard):
         # Conditions #5, #6
         opponent = gameboard.get_opponent(self.player)
 
-        for src_square in opponent.available_pieces_positions:
+        # print "\n---NEW BOARD FOR CASTLE---\n"
+        # self.player.print_board(gameboard)
+
+        # for src_square in opponent.available_pieces_positions:
+        for src_square in gameboard.avl_pieces_positions[opponent.color]:
+            print "src_square.code: ", src_square.code
+            print "src_square.occupying_piece.code: ", src_square.occupying_piece.code
             pieceValidator = MoveValidator.get_instance(opponent, src_square.occupying_piece)
             opponent_dst_squares_codes = pieceValidator.get_valid_dst_squares(src_square, gameboard)
             opponent_dst_squares = [SquareConverter.get_square_object_from_code(

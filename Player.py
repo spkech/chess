@@ -10,13 +10,12 @@ class Player(object):
         """Creates a player in a chess game."""
         self.name = name
         self.color = color
-        self.available_pieces_positions = []
         # self.lost_pieces = []
         self.captured_pieces = []
 
-    def get_square_codes_of_available_pieces(self):
+    def get_square_codes_of_available_pieces(self, gameboard):
         """ Returns a list containing the square codes of the available pieces of a player. """
-        square_codes = [square.code for square in self.available_pieces_positions]
+        square_codes = [square.code for square in gameboard.avl_pieces_positions[self.color]]
         return square_codes
 
     def get_color_str(self):
@@ -24,9 +23,10 @@ class Player(object):
         colors_dict = {WHITE: 'white', BLACK: 'black'}
         return colors_dict[self.color]
 
-    def is_valid(self, selected_square_code):
+    def is_valid(self, selected_square_code, gameboard):
         is_valid = None
-        if selected_square_code not in self.get_square_codes_of_available_pieces():
+        # if selected_square_code not in self.get_square_codes_of_available_pieces():
+        if selected_square_code not in self.get_square_codes_of_available_pieces(gameboard):
             is_valid = False
         else:
             is_valid = True
@@ -178,11 +178,11 @@ class Player(object):
             "stalemate": False
         })
 
-    def src_square_selection_is_valid(self, selected_square_code):
+    def src_square_selection_is_valid(self, selected_square_code, gameboard):
         """ Tests that the given square to move piece from is valid and prints a message accordingly."""
         selection_is_valid = None
 
-        if self.is_valid(selected_square_code) is False:
+        if self.is_valid(selected_square_code, gameboard) is False:
             selection_is_valid = False
             print "This square is invalid."
         else:

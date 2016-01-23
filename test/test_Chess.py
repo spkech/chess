@@ -206,9 +206,9 @@ class TestChess(unittest.TestCase):
             'c1', 'f4',
             'd8', 'g5',
             'b1', 'c3',
-            'g5', 'f5',
+            'g5', 'f4',
             'd1', 'd3',
-            'd7', 'd6',
+            'f4', 'd6',    #d2
             'e1', 'c1',
             'S'
             ])
@@ -225,7 +225,7 @@ class TestChess(unittest.TestCase):
             'c8', 'f5',
             'd3', 'd4',
             'd8', 'd6',
-            'd4', 'd5',
+            'c2', 'c3',
             'e8', 'c8',
             'S'
             ])
