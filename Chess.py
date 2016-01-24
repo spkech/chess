@@ -16,10 +16,11 @@ class Chess(object):
 
     def __init__(self):
         """Runs the program. """
-        Chess.run()
+        self.chess_game = None
+        Chess.run(self)
 
     @staticmethod
-    def run():
+    def run(self):
         """Runs the program's main loop (which entails printing the main menu, creating a chess game,
         playing and ending it. """
 
@@ -30,8 +31,8 @@ class Chess(object):
 
             (player1, player2) = Chess.setup_players()
             (white_player, black_player) = Chess.get_players_from_color(player1, player2)
-            chess_game = Game(player1, player2)
-            board = chess_game.board
+            self.chess_game = Game(player1, player2)
+            board = self.chess_game.board
             players = [white_player, black_player]
             player_in_turn = white_player
 
@@ -117,13 +118,13 @@ class Chess(object):
         if check is True:
             print "Check!"
             board.move_history[-1]["check"] = True
-            checkmate = board.checkmate_exists(player, board.avl_pieces_positions[player.color])
+            checkmate = board.checkmate_exists(player)
             if checkmate is True:
                 board.move_history[-1]["checkmate"] = True
                 print "Checkmate!!"
 
         else:
-            checkmate = board.checkmate_exists(player, board.avl_pieces_positions[player.color])
+            checkmate = board.checkmate_exists(player)
             if checkmate is True:
                 board.move_history[-1]["stalemate"] = True
                 stalemate = True

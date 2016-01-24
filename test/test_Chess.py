@@ -1,10 +1,46 @@
 import unittest
-from Chess import Chess
 from mock import patch, Mock, MagicMock, call
 from patch_wrapper import PatchWrapper as pw
+from Chess import Chess
+from Board import Board
+from Player import Player
+from Piece import *
+from Square import Square
+from MoveValidator import *
+from HelperClasses import *
 
 
 class TestChess(unittest.TestCase):
+
+    def test_custom_board_check(self):
+        (white, black) = Player("John", WHITE), Player("Jane", BLACK)
+        board = Board([white, black])
+        board.init_empty()
+
+        board.put_piece_on_square(King(WHITE), 'G8')
+        board.put_piece_on_square(Queen(BLACK), 'G6')
+        G6 = Converter.get_square_object_from_code('G6', board.position)
+
+        board.update_lists()
+        white.print_board(board)
+        check = board.check_exists(white, [G6])
+
+        self.assertEqual(check, True)
+
+    def test_custom_board_checkmate(self):
+        (white, black) = Player("John", WHITE), Player("Jane", BLACK)
+        board = Board([white, black])
+        board.init_empty()
+
+        board.put_piece_on_square(King(WHITE), 'G8')
+        board.put_piece_on_square(Queen(BLACK), 'G7')
+        board.put_piece_on_square(Rook(BLACK), 'H7')
+
+        board.update_lists()
+        white.print_board(board)
+        checkmate = board.checkmate_exists(black)
+
+        self.assertEqual(checkmate, True)
 
     def test_game_creation(self):
         pw.patch_module(self, '__builtin__.raw_input', side_effect=['1', 'Spy', 'Theo', 'w', 'S'])
@@ -321,5 +357,5 @@ class TestChess(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
-    # unittest.main(verbosity=0, buffer=True, exit=False)
+    # unittest.main()
+    unittest.main(verbosity=1, buffer=False, exit=False)
