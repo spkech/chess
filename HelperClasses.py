@@ -47,7 +47,7 @@ class Printer(object):
     }
 
 
-class SquareConverter(object):
+class Converter(object):
 
     @staticmethod
     def get_square_dimensions_from_code(code):
@@ -59,6 +59,11 @@ class SquareConverter(object):
         return (row, col)
 
     @staticmethod
+    def get_squares_codes_from_squares(squares_list):
+        """ Returns a list with the square codes corresponding to the squares in squares_list."""
+        return [square.code for square in squares_list]
+
+    @staticmethod
     def get_square_code_from_dimensions(row, col):
         """ Returns square code ('A1', 'A2', 'A3' etc)."""
         row = 7 - row + 1                    # numbers start from 1, while rows start from 0
@@ -67,11 +72,10 @@ class SquareConverter(object):
         return square_code
 
     @staticmethod
-    def get_square_object_from_code(code, board):
+    def get_square_object_from_code(code, board_position):
         """ Returns the square object corresponding to a given square code ('A1', 'A2', 'A3' etc)."""
-        (row, col) = SquareConverter.get_square_dimensions_from_code(code)
-        square = board[row][col]
-        return square
+        (row, col) = Converter.get_square_dimensions_from_code(code)
+        return board_position[row][col]
 
     @staticmethod
     def get_square_color(row, col):
@@ -111,7 +115,7 @@ class SquareConverter(object):
         }
 
         square_is_occupied_by = None
-        if SquareConverter.is_square_occupied_at_board_setup(row, col):
+        if Converter.is_square_occupied_at_board_setup(row, col):
             square_is_occupied_by = pieces_at_setup_dict[(row, col)]
 
         return square_is_occupied_by
@@ -120,11 +124,9 @@ class SquareConverter(object):
     def get_color_of_occupying_piece_at_board_setup(row, col):
         """ Returns the color of the piece that occupies the square of the given dimensions.
         Works for board starting position only. """
-
         piece_color = None
         if row in [0, 1]:
             piece_color = BLACK
         elif row in [6, 7]:
             piece_color = WHITE
-
         return piece_color

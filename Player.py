@@ -13,9 +13,9 @@ class Player(object):
         # self.lost_pieces = []
         self.captured_pieces = []
 
-    def get_square_codes_of_available_pieces(self, gameboard):
+    def get_square_codes_of_available_pieces(self, board):
         """ Returns a list containing the square codes of the available pieces of a player. """
-        square_codes = [square.code for square in gameboard.avl_pieces_positions[self.color]]
+        square_codes = [square.code for square in board.avl_pieces_positions[self.color]]
         return square_codes
 
     def get_color_str(self):
@@ -23,23 +23,23 @@ class Player(object):
         colors_dict = {WHITE: 'white', BLACK: 'black'}
         return colors_dict[self.color]
 
-    def is_valid(self, selected_square_code, gameboard):
+    def is_valid(self, selected_square_code, board):
         is_valid = None
         # if selected_square_code not in self.get_square_codes_of_available_pieces():
-        if selected_square_code not in self.get_square_codes_of_available_pieces(gameboard):
+        if selected_square_code not in self.get_square_codes_of_available_pieces(board):
             is_valid = False
         else:
             is_valid = True
         return is_valid
 
-    def finalize_move(self, src_square, dst_square, gameboard):
-        board = gameboard.board
+    def finalize_move(self, src_square, dst_square, board):
+        pos = board.position
         src_piece = src_square.occupying_piece
         capture_dict = {'capture_made': False, 'capturing_piece': None, 'captured_piece': None}
 
         # update 'src_square' attributes
-        board[src_square.row][src_square.col].is_occupied = False
-        board[src_square.row][src_square.col].occupying_piece = None
+        pos[src_square.row][src_square.col].is_occupied = False
+        pos[src_square.row][src_square.col].occupying_piece = None
 
         # update 'dst_square' attributes
         if dst_square.is_occupied:
@@ -51,48 +51,48 @@ class Player(object):
                 capture_dict['captured_piece'] = dst_piece
 
         # 'en passant' case
-        if gameboard.en_passant_square == dst_square:
-            previous_move = gameboard.move_history[-1]
+        if board.en_passant_square == dst_square:
+            previous_move = board.move_history[-1]
             capture_dict['capture_made'] = True
             capture_dict['capturing_piece'] = src_piece
             capture_dict['captured_piece'] = previous_move["dst_square"].occupying_piece
             previous_move["dst_square"].is_occupied = False
             previous_move["dst_square"].occupying_piece = None
-            gameboard.en_passant_square = None
+            board.en_passant_square = None
             dst_square.en_passant = True
 
         # castling case
-        castling_square = self.finalize_castling(dst_square, gameboard)
+        castling_square = self.finalize_castling(dst_square, board)
 
-        board[dst_square.row][dst_square.col].is_occupied = True
-        board[dst_square.row][dst_square.col].occupying_piece = src_piece
+        pos[dst_square.row][dst_square.col].is_occupied = True
+        pos[dst_square.row][dst_square.col].occupying_piece = src_piece
 
         # pawn promotion case
-        self.promote_pawn(dst_square, gameboard)
+        self.promote_pawn(dst_square, board)
 
         # mark king or rook as moved (used for castling)
         if (src_piece.code[1] == 'r') or (src_piece.code[1] == 'k'):
             src_piece.has_moved = True
 
-        self.update_move_history(src_square, dst_square, gameboard, capture_dict, castling_square)
+        self.update_move_history(src_square, dst_square, board, capture_dict, castling_square)
 
-    def finalize_castling(self, dst_square, gameboard):
+    def finalize_castling(self, dst_square, board):
         """ Move king and rook according to the type of castling selected (short or long). """
-        board = gameboard.board
+        pos = board.position
         castling_square = None
 
-        if dst_square == gameboard.castling_square:
+        if dst_square == board.castling_square:
             if self.color == WHITE:
                 # castle short
                 if dst_square.code == 'G1':
-                    (e1, f1, g1, h1) = (board[7][4], board[7][5], board[7][6], board[7][7])
+                    (e1, f1, g1, h1) = (pos[7][4], pos[7][5], pos[7][6], pos[7][7])
                     (g1.is_occupied, g1.occupying_piece) = (True, e1.occupying_piece)
                     (f1.is_occupied, f1.occupying_piece) = (True, h1.occupying_piece)
                     (e1.is_occupied, e1.occupying_piece) = (False, None)
                     (h1.is_occupied, h1.occupying_piece) = (False, None)
                 # castle long
                 elif dst_square.code == 'C1':
-                    (a1, b1, c1, d1, e1) = (board[7][0], board[7][1], board[7][2], board[7][3], board[7][4])
+                    (a1, b1, c1, d1, e1) = (pos[7][0], pos[7][1], pos[7][2], pos[7][3], pos[7][4])
                     (c1.is_occupied, c1.occupying_piece) = (True, e1.occupying_piece)
                     (d1.is_occupied, d1.occupying_piece) = (True, a1.occupying_piece)
                     (a1.is_occupied, a1.occupying_piece) = (False, None)
@@ -101,14 +101,14 @@ class Player(object):
             elif self.color == BLACK:
                 # castle short
                 if dst_square.code == 'G8':
-                    (e8, f8, g8, h8) = (board[0][4], board[0][5], board[0][6], board[0][7])
+                    (e8, f8, g8, h8) = (pos[0][4], pos[0][5], pos[0][6], pos[0][7])
                     (g8.is_occupied, g8.occupying_piece) = (True, e8.occupying_piece)
                     (f8.is_occupied, f8.occupying_piece) = (True, h8.occupying_piece)
                     (e8.is_occupied, e8.occupying_piece) = (False, None)
                     (h8.is_occupied, h8.occupying_piece) = (False, None)
                 # castle long
                 elif dst_square.code == 'C8':
-                    (a8, b8, c8, d8, e8) = (board[0][0], board[0][1], board[0][2], board[0][3], board[0][4])
+                    (a8, b8, c8, d8, e8) = (pos[0][0], pos[0][1], pos[0][2], pos[0][3], pos[0][4])
                     (c8.is_occupied, c8.occupying_piece) = (True, e8.occupying_piece)
                     (d8.is_occupied, d8.occupying_piece) = (True, a8.occupying_piece)
                     (a8.is_occupied, a8.occupying_piece) = (False, None)
@@ -116,13 +116,13 @@ class Player(object):
                     (e8.is_occupied, e8.occupying_piece) = (False, None)
             castling_square = dst_square
 
-        gameboard.castling_square = None
+        board.castling_square = None
         return castling_square
 
-    def promote_pawn(self, dst_square, gameboard):
+    def promote_pawn(self, dst_square, board):
         """ Promotes a pawn to a piece given by the user when asked. """
         if (dst_square.occupying_piece.code == 'wp') and (dst_square.row == 0):
-            self.select_promotion_piece(dst_square, gameboard.board)
+            self.select_promotion_piece(dst_square, board.position)
 
     def select_promotion_piece(self, dst_square, board):
         """ Asks player for the piece to replace the promoted pawn with. """
@@ -148,24 +148,22 @@ class Player(object):
         }
         board[dst_square.row][dst_square.col].occupying_piece = promotion_pieces[selection]
 
-    def get_move_sn(self, gameboard):
+    def get_move_sn(self, board):
         """ Gets the serial number of the player's last move. """
         # first move
-        if gameboard.move_history == []:
+        if board.move_history == []:
             current_move_sn = 1
         else:
-            if self.color == WHITE:
-                current_move_sn = gameboard.move_history[-1]["sn"] + 1
-            else:
-                current_move_sn = gameboard.move_history[-1]["sn"]
+            sn_dict = {WHITE: board.move_history[-1]["sn"] + 1, BLACK: board.move_history[-1]["sn"]}
+            current_move_sn = sn_dict[self.color]
         return current_move_sn
 
-    def update_move_history(self, src_square, dst_square, gameboard, capture_dict, castling_square):
+    def update_move_history(self, src_square, dst_square, board, capture_dict, castling_square):
         """ Updates move history with current move. """
 
-        current_move_sn = self.get_move_sn(gameboard)
+        current_move_sn = self.get_move_sn(board)
 
-        gameboard.move_history.append({
+        board.move_history.append({
             "sn": current_move_sn,
             "player": self,
             "src_square": src_square,
@@ -178,11 +176,11 @@ class Player(object):
             "stalemate": False
         })
 
-    def src_square_selection_is_valid(self, selected_square_code, gameboard):
+    def src_square_selection_is_valid(self, selected_square_code, board):
         """ Tests that the given square to move piece from is valid and prints a message accordingly."""
         selection_is_valid = None
 
-        if self.is_valid(selected_square_code, gameboard) is False:
+        if self.is_valid(selected_square_code, board) is False:
             selection_is_valid = False
             print "This square is invalid."
         else:
@@ -190,10 +188,10 @@ class Player(object):
 
         return selection_is_valid
 
-    def print_board(self, gameboard):
+    def print_board(self, board):
         """ Prints the board from the perspective of the player object that called the method. """
 
-        board = gameboard.board
+        board = board.position
         used_letter_notation_string = self.get_used_letter_notation_string(Player.LETTER_NOTATION_STRING)
 
         self.print_line()
@@ -222,20 +220,13 @@ class Player(object):
         self.print_line()
 
     def get_used_letter_notation_string(self, letter_notation_string):
-        used_letter_notation_string = None
-        if self.color == WHITE:
-            used_letter_notation_string = letter_notation_string
-        elif self.color == BLACK:
-            used_letter_notation_string = letter_notation_string[::-1]
+        notation_string_dict = {WHITE: letter_notation_string, BLACK: letter_notation_string[::-1]}
+        used_letter_notation_string = notation_string_dict[self.color]
         return used_letter_notation_string
 
     def get_indices(self, row, col):
-        (row_index, col_index) = (None, None)
-        if self.color == WHITE:
-            (row_index, col_index) = (row, col)
-        elif self.color == BLACK:
-            (row_index, col_index) = (7-row, 7-col)
-        return (row_index, col_index)
+        indices_dict = {WHITE: (row, col), BLACK: (7-row, 7-col)}
+        return indices_dict[self.color]
 
     def print_board_horizontal_border(self):
         print "\n   |---|---|---|---|---|---|---|---| "

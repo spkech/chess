@@ -9,48 +9,18 @@ class Piece(object):
 
     def get_code(self, piece_object):
         """Returns a string code of a given piece. String code differs depending on the piece color."""
-
-        code = ""
-        if self.color == WHITE:
-            code = "w"
-        elif self.color == BLACK:
-            code = "b"
-
-        if type(piece_object) is Pawn:
-            code += "p"
-        elif type(piece_object) is Knight:
-            code += "n"
-        elif type(piece_object) is Bishop:
-            code += "b"
-        elif type(piece_object) is Rook:
-            code += "r"
-        elif type(piece_object) is Queen:
-            code += "q"
-        elif type(piece_object) is King:
-            code += "k"
-
-        return code
+        color_code_dict = {WHITE: 'w', BLACK: 'b'}
+        type_code_dict = {Pawn: 'p', Knight: 'n', Bishop: 'b', Rook: 'r', Queen: 'q', King: 'k'}
+        return color_code_dict[self.color] + type_code_dict[type(piece_object)]
 
     @staticmethod
-    def get_instance(piece_code, piece_color):
+    def get_instance(code, color):
         """Returns an instance of a Piece according to the piece code given as an argument."""
         piece_instance = None
-
-        if piece_code is not None:
-            piece_code_part = piece_code[1]
-            if piece_code_part == "p":
-                piece_instance = Pawn(piece_color)
-            elif piece_code_part == "n":
-                piece_instance = Knight(piece_color)
-            elif piece_code_part == "b":
-                piece_instance = Bishop(piece_color)
-            elif piece_code_part == "r":
-                piece_instance = Rook(piece_color)
-            elif piece_code_part == "q":
-                piece_instance = Queen(piece_color)
-            elif piece_code_part == "k":
-                piece_instance = King(piece_color)
-
+        if code:
+            instance_dict = {'p': Pawn(color), 'n': Knight(color), 'b': Bishop(color),
+                             'r': Rook(color), 'q': Queen(color), 'k': King(color)}
+            piece_instance = instance_dict[code[1]]
         return piece_instance
 
     def __str__(self):

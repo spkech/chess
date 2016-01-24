@@ -9,14 +9,14 @@ class Board(object):
 
     def __init__(self, players):
         """Creates a chess board."""
-        self.board = [[None, None, None, None, None, None, None, None],
-                      [None, None, None, None, None, None, None, None],
-                      [None, None, None, None, None, None, None, None],
-                      [None, None, None, None, None, None, None, None],
-                      [None, None, None, None, None, None, None, None],
-                      [None, None, None, None, None, None, None, None],
-                      [None, None, None, None, None, None, None, None],
-                      [None, None, None, None, None, None, None, None]]
+        self.position = [[None, None, None, None, None, None, None, None],
+                         [None, None, None, None, None, None, None, None],
+                         [None, None, None, None, None, None, None, None],
+                         [None, None, None, None, None, None, None, None],
+                         [None, None, None, None, None, None, None, None],
+                         [None, None, None, None, None, None, None, None],
+                         [None, None, None, None, None, None, None, None],
+                         [None, None, None, None, None, None, None, None]]
 
         self.square_codes = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8',
                              'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8',
@@ -35,7 +35,6 @@ class Board(object):
         self.check = False
         self.checkmate = False
         self.stalemate = False
-        # self._setup_dicts()
         self._setup()
 
     def get_opponent(self, player):
@@ -44,13 +43,8 @@ class Board(object):
             if player != selected_player:
                 return selected_player
 
-    def assign_players_to_board(self):
-        """Assigns players given as arguments to current board."""
-        (white_player, black_player) = self._get_player_colors(self.players[0], self.players[1])
-        self.update_lists(white_player, black_player)
-
     def checkmate_exists(self, player, avl_src_pieces_squares):
-        """ For every piece of 'player', checks if there exists a move that results in the king not
+        """ For every piece of 'player', checks if there exists an opponent's move that results in their king not
         being threatened. Returns True for checkmate, false otherwise. """
 
         print "\nIN MATE CHECKING:"
@@ -65,35 +59,26 @@ class Board(object):
             opponent_src_piece = opponent_src_square.occupying_piece
             # print "opponent_src_piece: %s in %s" % (str(opponent_src_piece), opponent_src_square.code)
             pieceValidator = MoveValidator.get_instance(player, opponent_src_piece)
-
-            opponent_dst_squares_codes = pieceValidator.get_valid_dst_squares(opponent_src_square, self)
-            # print "dst_squares_codes for %s in %s: %s\n" % (
-            #     str(opponent_src_piece), opponent_src_square.code, opponent_dst_squares_codes)
-
-            opponent_dst_squares = [SquareConverter.get_square_object_from_code(
-                square_code, self.board) for square_code in opponent_dst_squares_codes]
+            opponent_dst_squares = pieceValidator.get_pseudolegal_dst_squares(opponent_src_square, self)
 
             # check if a move results to 'check', for every possible dst square of an opponent's piece
             for opponent_dst_square in opponent_dst_squares:
                 # print "DST SQUARE: ", opponent_dst_square.code
-                new_gameboard = copy.deepcopy(self)   # deep (recursive) copy
+                new_board = copy.deepcopy(self)   # deep (recursive) copy
 
                 # update squares attributes
-                new_gameboard.board[opponent_dst_square.row][opponent_dst_square.col].is_occupied = True
-                new_gameboard.board[opponent_dst_square.row][opponent_dst_square.col].occupying_piece = \
-                    self.board[opponent_src_square.row][opponent_src_square.col].occupying_piece
-                new_gameboard.board[opponent_src_square.row][opponent_src_square.col].is_occupied = False
-                new_gameboard.board[opponent_src_square.row][opponent_src_square.col].occupying_piece = None
+                new_board.position[opponent_dst_square.row][opponent_dst_square.col].is_occupied = True
+                new_board.position[opponent_dst_square.row][opponent_dst_square.col].occupying_piece = \
+                    self.position[opponent_src_square.row][opponent_src_square.col].occupying_piece
+                new_board.position[opponent_src_square.row][opponent_src_square.col].is_occupied = False
+                new_board.position[opponent_src_square.row][opponent_src_square.col].occupying_piece = None
 
                 # print "\nNEW BOARD:"
-                # opponent.print_board(new_gameboard)
+                # opponent.print_board(new_board)
 
-                if player.color is WHITE:
-                    new_gameboard.update_lists(player, opponent)
-                else:
-                    new_gameboard.update_lists(opponent, player)
+                new_board.update_lists()
 
-                avl_pieces = copy.deepcopy(new_gameboard.avl_pieces_positions[player.color])
+                avl_pieces = copy.deepcopy(new_board.avl_pieces_positions[player.color])
 
                 # avl_pieces_squares_codes = [square.code for square in avl_pieces]
                 # print "avl_pieces in CHECKMATE1: ", avl_pieces_squares_codes
@@ -107,7 +92,7 @@ class Board(object):
                 # avl_pieces_squares_codes = [square.code for square in avl_pieces]
                 # print "avl_pieces in CHECKMATE2: ", avl_pieces_squares_codes
 
-                check = new_gameboard.check_exists(player, avl_pieces)
+                check = new_board.check_exists(player, avl_pieces)
                 # print "AROUMPA: check: ", check
                 # print "\nIN MATE CHECKING, check after move of %s (%s->%s) is: %s " % (
                 #     str(opponent_src_piece), opponent_src_square.code, opponent_dst_square.code, check)
@@ -126,13 +111,9 @@ class Board(object):
 
         for src_square in avl_src_pieces_squares:
             pieceValidator = MoveValidator.get_instance(player, src_square.occupying_piece)
-            dst_squares_codes = pieceValidator.get_valid_dst_squares(src_square, self, castling=castling)
-            for dst_square_code in dst_squares_codes:
-                dst_square = SquareConverter.get_square_object_from_code(dst_square_code, self.board)
-                dst_squares.append(dst_square)
+            dst_squares = pieceValidator.get_pseudolegal_dst_squares(src_square, self, castling=castling)
 
             for dst_square in dst_squares:
-
                 if dst_square.is_occupied and dst_square.occupying_piece.code[1] == 'k':   # king
                     self.check = True
                     return True
@@ -142,15 +123,15 @@ class Board(object):
         """Sets up the board for the first time."""
         for row in range(0, 8):
             for col in range(0, 8):
-                current_square_color = SquareConverter.get_square_color(row, col)
-                current_square_code = SquareConverter.get_square_code_from_dimensions(row, col)
-                is_current_square_occupied = SquareConverter.is_square_occupied_at_board_setup(row, col)
+                current_square_color = Converter.get_square_color(row, col)
+                current_square_code = Converter.get_square_code_from_dimensions(row, col)
+                is_current_square_occupied = Converter.is_square_occupied_at_board_setup(row, col)
 
-                code_of_occupying_piece = SquareConverter.get_code_of_occupying_piece_at_board_setup(row, col)
-                color_of_occupying_piece = SquareConverter.get_color_of_occupying_piece_at_board_setup(row, col)
+                code_of_occupying_piece = Converter.get_code_of_occupying_piece_at_board_setup(row, col)
+                color_of_occupying_piece = Converter.get_color_of_occupying_piece_at_board_setup(row, col)
                 occupying_piece = Piece.get_instance(code_of_occupying_piece, color_of_occupying_piece)
 
-                self.board[row][col] = Square(
+                self.position[row][col] = Square(
                     current_square_color, current_square_code, is_current_square_occupied, occupying_piece, row, col)
 
     def _get_player_colors(self, player1, player2):
@@ -216,7 +197,7 @@ class Board(object):
 
             print "========================================================================"
 
-    def update_lists(self, white_player, black_player):
+    def update_lists(self):
         """Traverses the board and updates the following lists for both players according to the pieces' positions:
            1. 'available_pieces_positions':  the list containing all squares occupied by pieces of the player
         """
@@ -225,7 +206,7 @@ class Board(object):
 
         for row in range(0, 8):
             for col in range(0, 8):
-                square = self.board[row][col]
+                square = self.position[row][col]
                 if square.is_occupied:
                     if square.occupying_piece.color == WHITE:
                         white_pieces_list.append(square)
