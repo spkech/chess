@@ -474,13 +474,11 @@ class KingMoveValidator(MoveValidator):
 
         king_can_castle_short = self.king_can_castle_short(src_square, board)
         if king_can_castle_short:
-            # print "\nKING CAN CASTLE SHORT"
             board.castling_square = castling_squares[self.color]["short"]
             allowed_squares.append(board.castling_square)
 
         king_can_castle_long = self.king_can_castle_long(src_square, board)
         if king_can_castle_long:
-            # print "\nKING CAN CASTLE LONG"
             board.castling_square = castling_squares[self.color]["long"]
             allowed_squares.append(board.castling_square)
 
