@@ -19,7 +19,7 @@ class TestChess(unittest.TestCase):
 
         board.put_piece_on_square(King(WHITE), 'G8')
         board.put_piece_on_square(Queen(BLACK), 'G6')
-        G6 = Converter.get_square_object_from_code('G6', board.position)
+        G6 = board.get_square('G6')
 
         board.update_lists()
         white.print_board(board)
@@ -32,15 +32,69 @@ class TestChess(unittest.TestCase):
         board = Board([white, black])
         board.init_empty()
 
-        board.put_piece_on_square(King(WHITE), 'G8')
-        board.put_piece_on_square(Queen(BLACK), 'G7')
+        board.put_piece_on_square(King(WHITE), 'F8')
+        board.put_piece_on_square(Queen(BLACK), 'F6')
         board.put_piece_on_square(Rook(BLACK), 'H7')
 
+        F6 = board.get_square('F6')
+        F8 = board.get_square('F8')
+        G7 = board.get_square('G7')
+        G8 = board.get_square('G8')
+
+        white.finalize_move(F8, G8, board)
         board.update_lists()
+        white.print_board(board)
+        black.finalize_move(F6, G7, board)
         white.print_board(board)
         checkmate = board.checkmate_exists(black)
 
         self.assertEqual(checkmate, True)
+
+    def test_custom_board_draw_two_kings(self):
+        (white, black) = Player("John", WHITE), Player("Jane", BLACK)
+        board = Board([white, black])
+        board.init_empty()
+
+        board.put_piece_on_square(King(WHITE), 'F8')
+        board.put_piece_on_square(King(BLACK), 'G4')
+        board.put_piece_on_square(Rook(BLACK), 'F7')
+
+        F7 = board.get_square('F7')
+        F8 = board.get_square('F8')
+        G4 = board.get_square('G4')
+
+        board.update_lists()
+        white.print_board(board)
+        board.is_game_tied((white, black))
+
+        white.finalize_move(F8, F7, board)
+        board.update_lists()
+        white.print_board(board)
+        board.is_game_tied((white, black))
+        # checkmate = board.checkmate_exists(black)
+
+    def test_custom_board_black_king_and_bishop_against_white_king(self):
+        (white, black) = Player("John", WHITE), Player("Jane", BLACK)
+        board = Board([white, black])
+        board.init_empty()
+
+        board.put_piece_on_square(King(WHITE), 'F8')
+        board.put_piece_on_square(King(BLACK), 'G4')
+        board.put_piece_on_square(Bishop(BLACK), 'F7')
+
+        F7 = board.get_square('F7')
+        F8 = board.get_square('F8')
+        G4 = board.get_square('G4')
+
+        board.update_lists()
+        white.print_board(board)
+        board.is_game_tied((white, black))
+
+        # white.finalize_move(F8, F7, board)
+        # board.update_lists()
+        # white.print_board(board)
+        # board.is_game_tied((white, black))
+        # checkmate = board.checkmate_exists(black)
 
     def test_game_creation(self):
         pw.patch_module(self, '__builtin__.raw_input', side_effect=['1', 'Spy', 'Theo', 'w', 'S'])
@@ -340,6 +394,21 @@ class TestChess(unittest.TestCase):
             'h1', 'h2',
             'a7', 'a4',
             'b4', 'a4',       # should be stalemate
+            'S'
+            ])
+        Chess.main()
+
+    def test_fifty_move_draw(self):
+        pw.patch_module(self, '__builtin__.raw_input', side_effect=[
+            '1', 'Spy', 'Theo', 'w',
+            'b1', 'c3',    # white knight move
+            'b8', 'c6',    # black knight move
+            'g1', 'f3',
+            'g8', 'f6',
+            'e2', 'e4',
+            'f6', 'h5',
+            # 'd2', 'd4',
+            # 'd7', 'd5',
             'S'
             ])
         Chess.main()

@@ -2,7 +2,7 @@
 # Written by:    Spyros Kechagias
 # e-mail:        spiridon_kechagias at gmail.com
 #
-# Started in:    5/12/2015
+# Started on:    5/12/2015
 #
 # ==================================================================================
 
@@ -58,6 +58,7 @@ class Chess(object):
                     board.update_lists()
                     (check, checkmate, stalemate) = Chess.check_for_check_checkmate_stalemate(
                         board, player_in_turn)
+                    Chess.check_for_draw(board, players)
                     board.print_move_history()
                 else:
                     print "Invalid move. Please choose again.\n"
@@ -68,6 +69,11 @@ class Chess(object):
 
         elif selected_option == '2':    # exit program
             pass
+
+    @staticmethod
+    def check_for_draw(board, players):
+        """ Checks for draws. Does not include stalemate checking. """
+        board.is_game_tied(players)
 
     @staticmethod
     def print_main_menu():

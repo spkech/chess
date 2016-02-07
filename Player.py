@@ -10,7 +10,6 @@ class Player(object):
         """Creates a player in a chess game."""
         self.name = name
         self.color = color
-        # self.lost_pieces = []
         self.captured_pieces = []
 
     def get_square_codes_of_available_pieces(self, board):
@@ -25,7 +24,6 @@ class Player(object):
 
     def is_valid(self, selected_square_code, board):
         is_valid = None
-        # if selected_square_code not in self.get_square_codes_of_available_pieces():
         if selected_square_code not in self.get_square_codes_of_available_pieces(board):
             is_valid = False
         else:
@@ -36,6 +34,7 @@ class Player(object):
         pos = board.position
         src_piece = src_square.occupying_piece
         capture_dict = {'capture_made': False, 'capturing_piece': None, 'captured_piece': None}
+        draw_move_counter = 1
 
         # update 'src_square' attributes
         pos[src_square.row][src_square.col].is_occupied = False
@@ -74,7 +73,18 @@ class Player(object):
         if (src_piece.code[1] == 'r') or (src_piece.code[1] == 'k'):
             src_piece.has_moved = True
 
-        self.update_move_history(src_square, dst_square, board, capture_dict, castling_square)
+        # keep count of consecutive draw moves
+        if board.move_history != []:
+            previous_move = board.move_history[-1]
+            # if pawn was moved or capture was made in current move, reset draw counter to 1
+            pawn_was_moved = src_piece.code[1] == 'p'
+            capture_was_made = capture_dict['capture_made']
+            if pawn_was_moved or capture_was_made:
+                draw_move_counter = 1
+            else:
+                draw_move_counter = previous_move["draw_move_counter"] + 1
+
+        self.update_move_history(src_square, dst_square, board, capture_dict, castling_square, draw_move_counter)
 
     def finalize_castling(self, dst_square, board):
         """ Move king and rook according to the type of castling selected (short or long). """
@@ -158,7 +168,7 @@ class Player(object):
             current_move_sn = sn_dict[self.color]
         return current_move_sn
 
-    def update_move_history(self, src_square, dst_square, board, capture_dict, castling_square):
+    def update_move_history(self, src_square, dst_square, board, capture_dict, castling_square, draw_move_counter):
         """ Updates move history with current move. """
 
         current_move_sn = self.get_move_sn(board)
@@ -173,7 +183,8 @@ class Player(object):
             "castling_square": castling_square,
             "check": False,
             "checkmate": False,
-            "stalemate": False
+            "stalemate": False,
+            "draw_move_counter": draw_move_counter
         })
 
     def src_square_selection_is_valid(self, selected_square_code, board):

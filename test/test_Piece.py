@@ -2,7 +2,6 @@ import unittest
 from Piece import *
 from mock import patch, Mock, MagicMock, call
 from patch_wrapper import PatchWrapper as pw
-# from nokia.anscli.lib.anscli_validator import AnscliValidator
 
 
 class TestPiece(unittest.TestCase):
@@ -19,18 +18,18 @@ class TestPiece(unittest.TestCase):
         # self.mock_os = self.patcher2.start()
 
     def test_piece_creation(self):
-        white_pawn = Pawn("white")
-        white_knight = Knight("white")
-        white_bishop = Bishop("white")
-        white_rook = Rook("white")
-        white_queen = Queen("white")
-        white_king = King("white")
-        black_pawn = Pawn("black")
-        black_knight = Knight("black")
-        black_bishop = Bishop("black")
-        black_rook = Rook("black")
-        black_queen = Queen("black")
-        black_king = King("black")
+        white_pawn = Pawn(WHITE)
+        white_knight = Knight(WHITE)
+        white_bishop = Bishop(WHITE)
+        white_rook = Rook(WHITE)
+        white_queen = Queen(WHITE)
+        white_king = King(WHITE)
+        black_pawn = Pawn(BLACK)
+        black_knight = Knight(BLACK)
+        black_bishop = Bishop(BLACK)
+        black_rook = Rook(BLACK)
+        black_queen = Queen(BLACK)
+        black_king = King(BLACK)
 
         self.assertEqual(white_pawn.code, "wp")
         self.assertEqual(white_knight.code, "wn")

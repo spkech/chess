@@ -37,6 +37,10 @@ class Board(object):
         self.stalemate = False
         self.setup()
 
+    def get_square(self, square_code):
+        """ Returns the square corresponding to the square code given as argument. """
+        return Converter.get_square_object_from_code(square_code, self.position)
+
     def get_opponent(self, player):
         """ Returns the opponent of the player given as argument. """
         for selected_player in self.players:
@@ -47,26 +51,26 @@ class Board(object):
         """ For every piece of 'player', checks if there exists an opponent's move that results in their king not
         being threatened. Returns True for checkmate, false otherwise. """
 
-        print "\nIN MATE CHECKING:"
+        # print "\nIN MATE CHECKING:"
         opponent = self.get_opponent(player)
         opponent_src_squares = self.avl_pieces_positions[opponent.color]
 
-        print "opponent color: ", opponent.get_color_str()
-        print "opponent's pieces: ", opponent.get_square_codes_of_available_pieces(self)
+        # print "opponent color: ", opponent.get_color_str()
+        # print "opponent's pieces: ", opponent.get_square_codes_of_available_pieces(self)
 
         for opponent_src_square in opponent_src_squares:
-            print "opponent_src_square:: ", opponent_src_square.code
+            # print "opponent_src_square:: ", opponent_src_square.code
             opponent_src_piece = opponent_src_square.occupying_piece
-            print "opponent_src_piece: %s in %s" % (str(opponent_src_piece), opponent_src_square.code)
+            # print "opponent_src_piece: %s in %s" % (str(opponent_src_piece), opponent_src_square.code)
             pieceValidator = MoveValidator.get_instance(player, opponent_src_piece)
             opponent_dst_squares = pieceValidator.get_pseudolegal_dst_squares(opponent_src_square, self)
 
             # check if a move results to 'check', for every possible dst square of an opponent's piece
             for opponent_dst_square in opponent_dst_squares:
 
-                opponent_dst_squares_codes = [square.code for square in opponent_dst_squares]
-                print "opponent_dst_squares:: ", opponent_dst_squares_codes
-                print "DST SQUARE: ", opponent_dst_square.code
+                # opponent_dst_squares_codes = [square.code for square in opponent_dst_squares]
+                # print "opponent_dst_squares:: ", opponent_dst_squares_codes
+                # print "DST SQUARE: ", opponent_dst_square.code
 
                 new_board = copy.deepcopy(self)   # deep (recursive) copy
 
@@ -77,8 +81,8 @@ class Board(object):
                 new_board.position[opponent_src_square.row][opponent_src_square.col].is_occupied = False
                 new_board.position[opponent_src_square.row][opponent_src_square.col].occupying_piece = None
 
-                print "\nNEW BOARD:"
-                opponent.print_board(new_board)
+                # print "\nNEW BOARD:"
+                # opponent.print_board(new_board)
 
                 new_board.update_lists()
 
@@ -94,17 +98,17 @@ class Board(object):
                 #     avl_pieces.remove(opponent_dst_square)  # remove piece in case of capture
 
                 avl_pieces_squares_codes = [square.code for square in avl_pieces]
-                print "avl_pieces in CHECKMATE2: ", avl_pieces_squares_codes
-                print "player color: ", player.color
+                # print "avl_pieces in CHECKMATE2: ", avl_pieces_squares_codes
+                # print "player color: ", player.color
 
                 check = new_board.check_exists(player, avl_pieces)
-                print "AROUMPA: check: ", check
-                print "\nIN MATE CHECKING, check after move of %s (%s->%s) is: %s " % (
-                    str(opponent_src_piece), opponent_src_square.code, opponent_dst_square.code, check)
-                if check is True:
-                    print "IN MATE CHECKING: Your king is being checked!"
+                # print "AROUMPA: check: ", check
+                # print "\nIN MATE CHECKING, check after move of %s (%s->%s) is: %s " % (
+                    # str(opponent_src_piece), opponent_src_square.code, opponent_dst_square.code, check)
+                # if check is True:
+                    # print "IN MATE CHECKING: Your king is being checked!"
                 if check is False:
-                    print "IN MATE CHECKING: Mate has been avoided! Check is false!"
+                    # print "IN MATE CHECKING: Mate has been avoided! Check is false!"
                     return False
         return True
 
@@ -124,12 +128,40 @@ class Board(object):
                     return True
         return False
 
+    def is_game_tied(self, players):
+        """ Checks for draws and returns true if game is tied. """
+        self.tied_due_to_insufficient_mating_material(players)
+
+    def tied_due_to_insufficient_mating_material(self, players):
+        """ Returns true if there is insufficient mating material on the board. """
+        game_is_tied = False
+        (player1, player2) = players
+        (white, black) = self._get_player_colors(player1, player2)
+
+        white_pieces = [square.occupying_piece.code for square in self.avl_pieces_positions[WHITE]]
+        black_pieces = [square.occupying_piece.code for square in self.avl_pieces_positions[BLACK]]
+
+        just_the_two_kings_on_board = (white_pieces == ['wk'] and black_pieces == ['bk'])
+        king_and_bishop_against_a_king = ((white_pieces == sorted(['wk', 'wb']) and black_pieces == sorted(['bk'])) or
+                                          (black_pieces == sorted(['bk', 'bb']) and white_pieces == sorted(['wk'])))
+        king_and_knight_against_a_king = ((white_pieces == sorted(['wk', 'wn']) and black_pieces == sorted(['bk'])) or
+                                          (black_pieces == sorted(['bk', 'bn']) and white_pieces == sorted(['wk'])))
+
+        if just_the_two_kings_on_board or king_and_bishop_against_a_king or king_and_knight_against_a_king:
+            game_is_tied = True
+
+        print "white_pieces: ", white_pieces
+        print "black_pieces: ", black_pieces
+        print "game_is_tied: ", game_is_tied
+
+        return game_is_tied
+
     def init_empty(self):
         for row in range(0, 8):
             for col in range(0, 8):
                 current_square_color = Converter.get_square_color(row, col)
                 current_square_code = Converter.get_square_code_from_dimensions(row, col)
-                self.position[row][col] = Square(current_square_color, current_square_code, False, None, row, col)
+                self.position[row][col] = Square(False, None, current_square_color, current_square_code, row, col)
 
     def put_piece_on_square(self, piece, square_code):
         (row, col) = Converter.get_square_dimensions_from_code(square_code)
@@ -149,7 +181,7 @@ class Board(object):
                 occupying_piece = Piece.get_instance(code_of_occupying_piece, color_of_occupying_piece)
 
                 self.position[row][col] = Square(
-                    current_square_color, current_square_code, is_current_square_occupied, occupying_piece, row, col)
+                    is_current_square_occupied, occupying_piece, current_square_color, current_square_code, row, col)
 
     def _get_player_colors(self, player1, player2):
         """ Returns the tuple (<white_player>, <black_player>). """
@@ -158,7 +190,7 @@ class Board(object):
 
     def print_move_history(self, player=None):
         """ Prints board's move history. If a player is given as argument, prints only this player's move history. """
-        # print all (both players') move history
+        # print all (both _get_player_colors') move history
         moves = self.move_history
         en_passant_str = None
 
@@ -169,6 +201,7 @@ class Board(object):
                 capture_str = ''
                 check_str = ''
                 castling_str = ''
+                draw_move_counter_str = move['draw_move_counter']
 
                 if move["player"].color == WHITE:
                     sn_str = str(move['sn'])
@@ -204,8 +237,9 @@ class Board(object):
                 name = move['player'].name
                 src = move['src_square'].code
                 dst = move['dst_square'].code
-                print " %s\t %s (%s):\t%s%s%s\t%s%s%s%s" \
-                    % (sn_str, color_str, name, src, symbol, dst, capture_str, en_passant_str, check_str, castling_str)
+                print " %s\t %s (%s):\t%s%s%s\t%s%s%s%s%s" \
+                    % (sn_str, color_str, name, src, symbol, dst, capture_str, en_passant_str, check_str, castling_str,
+                        draw_move_counter_str)
 
             print "========================================================================"
 

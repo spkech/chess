@@ -1,5 +1,6 @@
 import unittest
 from Board import *
+from Player import *
 from mock import patch, Mock, MagicMock, call
 from patch_wrapper import PatchWrapper as pw
 # from nokia.anscli.lib.anscli_validator import AnscliValidator
@@ -20,11 +21,10 @@ class TestBoard(unittest.TestCase):
 
     def test_get_square_code(self):
         mock_update_lists = pw.patch_object(self, Board, "update_lists")
-        board = Board("player1", "player2")
+        player1 = Player("spy", WHITE)
+        player2 = Player("theo", BLACK)
+        board = Board([player1, player2])
 
-        # board._get_square_code(0,0)
-
-        # self.assertEqual(black_king.code, "bk")
 
 if __name__ == '__main__':
     unittest.main()
